@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1e9">
+  <title>API / MCP Field Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1e9;
+      --ink: #17211f;
+      --muted: #64706c;
+      --line: #d8d8ce;
+      --green: #167b68;
+      --green-dark: #10584d;
+      --coral: #db684c;
+      --yellow: #e7c264;
+      --white: #fffef9;
+      --mono: "Cascadia Code", Consolas, monospace;
+      --sans: "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background-color: var(--paper);
+      background-image: radial-gradient(#b6b8aa 0.65px, transparent 0.65px);
+      background-size: 15px 15px;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+    button, input { font: inherit; }
+    button:focus-visible, input:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+    .shell { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    header { padding: 25px 0 20px; border-bottom: 1px solid var(--line); }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 13px; font-weight: 800; letter-spacing: 0; }
+    .brand-mark { display: grid; width: 34px; aspect-ratio: 1; place-items: center; color: var(--white); background: var(--green); border-radius: 50%; font-family: var(--mono); font-size: 12px; }
+    .server-state { display: flex; align-items: center; gap: 8px; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+    .state-dot { width: 8px; aspect-ratio: 1; border-radius: 50%; background: #b6a153; }
+    .state-dot.online { background: var(--green); box-shadow: 0 0 0 3px #167b6824; }
+    main { padding: 52px 0 70px; }
+    .intro { display: grid; grid-template-columns: 1fr minmax(240px, 340px); gap: 40px; align-items: end; margin-bottom: 37px; }
+    .eyebrow { margin: 0 0 12px; color: var(--green); font: 500 11px var(--mono); text-transform: uppercase; }
+    h1 { max-width: 700px; margin: 0; font-size: clamp(36px, 5vw, 62px); line-height: 1.04; letter-spacing: 0; }
+    h1 span { color: var(--green); }
+    .intro-note { margin: 0 0 4px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .intro-note strong { color: var(--ink); }
+    .workbench { display: grid; grid-template-columns: minmax(250px, .78fr) minmax(0, 1.5fr); border: 1px solid var(--ink); background: var(--white); box-shadow: 8px 8px 0 var(--ink); }
+    .controls { padding: 25px; border-right: 1px solid var(--line); }
+    .section-label { margin: 0 0 18px; font: 500 11px var(--mono); text-transform: uppercase; color: var(--muted); }
+    label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; }
+    .term-input { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 0; color: var(--ink); background: var(--paper); }
+    .term-input:focus { border-color: var(--green); outline-color: var(--green); }
+    .term-hints { display: flex; flex-wrap: wrap; gap: 7px; margin: 11px 0 27px; }
+    .hint { padding: 5px 9px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: transparent; cursor: pointer; font: 11px var(--mono); }
+    .hint:hover { border-color: var(--green); color: var(--green-dark); }
+    .run-button { width: 100%; min-height: 46px; display: flex; justify-content: space-between; align-items: center; padding: 0 14px; border: 0; color: var(--white); background: var(--green); cursor: pointer; font-size: 13px; font-weight: 800; }
+    .run-button:hover { background: var(--green-dark); }
+    .run-button:disabled { opacity: .65; cursor: wait; }
+    .run-arrow { font-size: 18px; }
+    .choice-label { margin: 24px 0 9px; font: 500 10px var(--mono); color: var(--muted); text-transform: uppercase; }
+    .mode-switch { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; background: #e9e9e0; }
+    .mode-button { min-height: 36px; border: 0; color: var(--muted); background: transparent; cursor: pointer; font: 11px var(--mono); }
+    .mode-button[aria-pressed="true"] { color: var(--ink); background: var(--white); box-shadow: 0 1px 4px #17211f1c; }
+    .explain { margin: 19px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .output { min-width: 0; }
+    .output-top { min-height: 55px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 1px solid var(--line); }
+    .output-title { font-size: 12px; font-weight: 800; }
+    .protocol-badge { padding: 5px 8px; color: var(--green-dark); background: #e1f0e8; font: 10px var(--mono); }
+    .output-body { min-height: 247px; padding: 22px; }
+    .empty-state { display: grid; min-height: 202px; align-content: center; justify-items: center; text-align: center; color: var(--muted); }
+    .empty-icon { display: grid; width: 42px; aspect-ratio: 1; place-items: center; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 50%; color: var(--green); font: 16px var(--mono); }
+    .empty-state p { max-width: 300px; margin: 0; font-size: 12px; line-height: 1.6; }
+    .result-term { margin: 0 0 7px; color: var(--green-dark); font: 500 10px var(--mono); text-transform: uppercase; }
+    .result-summary { margin: 0 0 13px; font-size: 19px; font-weight: 800; line-height: 1.4; }
+    .result-copy { margin: 0 0 13px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .result-example { padding: 11px 13px; border-left: 3px solid var(--yellow); background: #f7f3e7; font: 11px/1.6 var(--mono); }
+    .trace { display: none; margin: 0 22px 20px; padding: 14px; color: #dfeae2; background: #17211f; }
+    .trace.visible { display: block; animation: appear .25s ease-out; }
+    .trace-title { display: flex; justify-content: space-between; margin-bottom: 10px; color: #a5bbb0; font: 10px var(--mono); text-transform: uppercase; }
+    .trace-step { display: grid; grid-template-columns: 20px 1fr; gap: 9px; padding: 7px 0; font: 10px/1.5 var(--mono); }
+    .trace-num { color: var(--yellow); }
+    .trace-step code { color: #dfeae2; font: inherit; overflow-wrap: anywhere; }
+    .below { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 42px; }
+    .learning-panel { padding: 21px 0 0; border-top: 2px solid var(--ink); }
+    .learning-panel h2 { margin: 0 0 11px; font-size: 18px; }
+    .learning-panel p { max-width: 510px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.75; }
+    .primitive-list { display: grid; gap: 0; margin-top: 15px; border-top: 1px solid var(--line); }
+    .primitive { display: grid; grid-template-columns: 78px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 11px; line-height: 1.5; }
+    .primitive strong { color: var(--green-dark); font-family: var(--mono); font-weight: 500; }
+    .primitive span { color: var(--muted); }
+    .inspect-row { display: flex; gap: 9px; margin-top: 14px; }
+    .small-button { padding: 9px 11px; border: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer; font: 10px var(--mono); }
+    .small-button:hover { color: var(--white); background: var(--ink); }
+    .inspect-result { display: none; margin-top: 13px; padding: 12px; overflow: auto; color: #dfeae2; background: #17211f; white-space: pre-wrap; font: 10px/1.6 var(--mono); }
+    .inspect-result.visible { display: block; }
+    footer { padding: 18px 0 25px; border-top: 1px solid var(--line); color: var(--muted); font: 10px var(--mono); }
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 28px, 560px); }
+      main { padding-top: 35px; }
+      .intro { grid-template-columns: 1fr; gap: 14px; margin-bottom: 27px; }
+      .intro-note { max-width: 520px; }
+      .workbench { grid-template-columns: 1fr; box-shadow: 5px 5px 0 var(--ink); }
+      .controls { border-right: 0; border-bottom: 1px solid var(--line); }
+      .below { grid-template-columns: 1fr; gap: 29px; margin-top: 34px; }
+      .output-body { min-height: 220px; }
+      .empty-state { min-height: 175px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <div class="brand"><span class="brand-mark">A/M</span><span>FIELD GUIDE · 01</span></div>
+      <div class="server-state"><span class="state-dot" id="stateDot"></span><span id="serverState">Checking MCP server</span></div>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="intro" aria-labelledby="pageTitle">
+      <div>
+        <p class="eyebrow">A hands-on protocol demo</p>
+        <h1 id="pageTitle">API does the work.<br><span>MCP connects the host.</span></h1>
+      </div>
+      <p class="intro-note"><strong>One bookstore, different jobs.</strong> Use REST to browse books or place an order. Use MCP tools to search by intent or build a reading plan, with a catalog resource available to the host.</p>
+    </section>
+
+    <section class="workbench" aria-label="Interactive API and MCP comparison">
+      <div class="controls">
+        <p class="section-label">01 / Select a working function</p>
+        <p class="choice-label">Interface</p>
+        <div class="mode-switch" role="group" aria-label="Choose interaction path">
+          <button class="mode-button" type="button" data-mode="api" aria-pressed="false">REST API</button>
+          <button class="mode-button" type="button" data-mode="mcp" aria-pressed="true">MCP host</button>
+        </div>
+        <label for="operationSelect" id="operationLabel">MCP capability</label>
+        <select class="term-input" id="operationSelect"></select>
+        <div id="argumentFields"></div>
+        <button class="run-button" id="runButton" type="button"><span id="runLabel">Run MCP tool</span><span class="run-arrow" aria-hidden="true">↗</span></button>
+        <p class="explain" id="modeExplain">The MCP host discovers a tool, then invokes it with your goal. The server also exposes its catalog as a resource.</p>
+      </div>
+      <div class="output">
+        <div class="output-top"><span class="output-title">02 / Response &amp; request trace</span><span class="protocol-badge" id="protocolBadge">MCP · Streamable HTTP</span></div>
+        <div class="output-body" id="outputBody" aria-live="polite">
+          <div class="empty-state"><span class="empty-icon">↗</span><p>Choose a function and run it. Each interface has its own useful job and response.</p></div>
+        </div>
+        <div class="trace" id="trace" aria-label="Request trace"></div>
+      </div>
+    </section>
+
+    <section class="below" aria-label="Concept guide">
+      <article class="learning-panel">
+        <p class="section-label">03 / The distinction</p>
+        <h2>Explicit endpoint or discovered capability?</h2>
+        <p>A REST client chooses a known endpoint such as browse books or place an order. An MCP host discovers server capabilities, then can select a tool based on the user's goal. MCP also gives the host a standard way to read context and request reusable prompts.</p>
+        <div class="primitive-list">
+          <div class="primitive"><strong>Tool</strong><span>Search books or build a reading plan from a goal.</span></div>
+          <div class="primitive"><strong>Resource</strong><span>Read the bookstore catalog with prices and stock.</span></div>
+          <div class="primitive"><strong>Prompt</strong><span>Get a reusable book-recommendation instruction.</span></div>
+        </div>
+        <div class="inspect-row">
+          <button class="small-button" id="catalogButton" type="button">Inspect MCP catalog</button>
+          <button class="small-button" id="promptButton" type="button">Get recommendation prompt</button>
+        </div>
+        <pre class="inspect-result" id="inspectResult" aria-live="polite"></pre>
+      </article>
+      <article class="learning-panel">
+        <p class="section-label">04 / What this demo runs</p>
+        <h2>Follow each request to its function.</h2>
+        <p>This demo lets you select the operation manually. No model is connected; in an AI application, the host can give tool descriptions to a model and handle its tool choice.</p>
+        <div class="primitive-list">
+          <div class="primitive"><strong>REST browse</strong><span><code>GET /api/books?category=Technology</code> → FastAPI validates query parameters → <code>browse_books()</code> filters the catalog → JSON list.</span></div>
+          <div class="primitive"><strong>REST order</strong><span><code>POST /api/orders</code> with <code>{"book_id":"b101","quantity":2}</code> → <code>create_order()</code> checks stock, decrements it, and returns a receipt.</span></div>
+          <div class="primitive"><strong>MCP search</strong><span>Host reads tool schema with <code>tools/list</code> → sends <code>tools/call</code> for <code>search_books</code> → server returns structured book results.</span></div>
+          <div class="primitive"><strong>MCP plan</strong><span>Host calls <code>build_reading_plan</code> with a learning goal → server chooses and orders books → host receives structured steps.</span></div>
+          <div class="primitive"><strong>Also MCP</strong><span><code>bookstore://catalog</code> is readable context; <code>book_recommendation</code> is a reusable prompt. MCP complements APIs; it doesn't replace them.</span></div>
+        </div>
+      </article>
+    </section>
+  </main>
+  <footer><div class="shell">LOCAL LEARNING DEMO · FASTAPI + OFFICIAL MCP PYTHON SDK</div></footer>
+  <script>
+    const operationSelect = document.querySelector("#operationSelect");
+    const operationLabel = document.querySelector("#operationLabel");
+    const argumentFields = document.querySelector("#argumentFields");
+    const runButton = document.querySelector("#runButton");
+    const runLabel = document.querySelector("#runLabel");
+    const outputBody = document.querySelector("#outputBody");
+    const trace = document.querySelector("#trace");
+    const protocolBadge = document.querySelector("#protocolBadge");
+    const modeExplain = document.querySelector("#modeExplain");
+    const inspectResult = document.querySelector("#inspectResult");
+    let mode = "mcp";
+
+    const operations = {
+      api: [
+        { value: "browse", label: "Browse / filter books" },
+        { value: "order", label: "Place a book order" },
+      ],
+      mcp: [
+        { value: "search", label: "Tool: search books" },
+        { value: "plan", label: "Tool: build a reading plan" },
+      ],
+    };
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[char]);
+    }
+
+    function renderFields() {
+      const operation = operationSelect.value;
+      if (operation === "order") {
+        argumentFields.innerHTML = `<label for="bookId">Book</label><select class="term-input" id="bookId" disabled><option value="">Loading catalog…</option></select><label for="quantity" style="margin-top:14px">Quantity</label><input class="term-input" id="quantity" type="number" min="1" max="10" value="1">`;
+        loadOrderOptions();
+      } else if (operation === "plan") {
+        argumentFields.innerHTML = `<label for="goal">What do you want to learn?</label><input class="term-input" id="goal" maxlength="200" value="Build a Python API" placeholder="e.g. Learn API design">`;
+      } else {
+        const label = operation === "browse" ? "Search books (optional)" : "Search by topic or title";
+        argumentFields.innerHTML = `<label for="query">${label}</label><input class="term-input" id="query" maxlength="100" value="${operation === "browse" ? "" : "MCP"}" placeholder="e.g. MCP"><label for="category" style="margin-top:14px">Category${operation === "browse" ? " (optional)" : " filter (optional)"}</label><select class="term-input" id="category"><option value="">All categories</option><option value="Technology">Technology</option><option value="Fiction">Fiction</option><option value="Non-fiction">Non-fiction</option><option value="Science">Science</option></select>`;
+      }
+      operationLabel.textContent = mode === "api" ? "REST endpoint" : "MCP capability";
+      runLabel.textContent = mode === "api" ? (operation === "order" ? "Place order via API" : "Browse via API") : (operation === "plan" ? "Build plan with MCP" : "Search with MCP");
+      modeExplain.textContent = mode === "api"
+        ? (operation === "order" ? "REST sends a checkout request to a fixed endpoint. The API validates the book and quantity, then confirms the order." : "REST calls a known catalog endpoint with query parameters and returns matching books.")
+        : (operation === "plan" ? "The MCP host discovers the reading-plan tool, then supplies your learning goal as structured arguments." : "The MCP host discovers the search tool, then supplies a query and optional category filter.");
+    }
+
+    async function loadOrderOptions() {
+      const select = document.querySelector("#bookId");
+      if (!select) return;
+      try {
+        const response = await fetch("/api/books");
+        const books = await response.json();
+        if (!response.ok) throw new Error("Could not load the current catalog.");
+        if (document.querySelector("#bookId") !== select) return;
+        select.innerHTML = books.map((book) => `<option value="${escapeHtml(book.book_id)}">${escapeHtml(book.title)} · $${Number(book.price).toFixed(2)} · ${escapeHtml(book.stock)} in stock</option>`).join("");
+        select.disabled = books.length === 0;
+      } catch (error) {
+        select.innerHTML = `<option value="">Catalog unavailable</option>`;
+        select.disabled = true;
+      }
+    }
+
+    operationSelect.addEventListener("change", renderFields);
+    renderFields();
+
+    document.querySelectorAll(".mode-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        mode = button.dataset.mode;
+        document.querySelectorAll(".mode-button").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+        const usingApi = mode === "api";
+        protocolBadge.textContent = usingApi ? "HTTP · REST" : "MCP · Streamable HTTP";
+        operationSelect.innerHTML = operations[mode].map((item) => `<option value="${item.value}">${item.label}</option>`).join("");
+        renderFields();
+      });
+    });
+
+    function showBooks(data) {
+      const books = Array.isArray(data) ? data : data.books;
+      outputBody.innerHTML = `<p class="result-term">${escapeHtml(data.total ?? books.length)} BOOKS FOUND</p>${books.length ? books.map((book) => `<div class="primitive"><strong>${escapeHtml(book.book_id)}</strong><span><b>${escapeHtml(book.title)}</b> · ${escapeHtml(book.category)} · $${Number(book.price).toFixed(2)} · ${escapeHtml(book.stock)} in stock<br>${escapeHtml(book.description)}</span></div>`).join("") : "<p>No matching books.</p>"}`;
+    }
+
+    function showOrder(order) {
+      outputBody.innerHTML = `<p class="result-term">ORDER ${escapeHtml(order.status.toUpperCase())}</p><p class="result-summary">${escapeHtml(order.title)}</p><p class="result-copy">Order ${escapeHtml(order.order_id)} · ${escapeHtml(order.quantity)} copy/copies</p><div class="result-example">Total: $${Number(order.total).toFixed(2)}</div>`;
+    }
+
+    function showPlan(plan) {
+      outputBody.innerHTML = `<p class="result-term">READING PLAN · ${escapeHtml(plan.goal)}</p>${plan.steps.map((step) => `<div class="primitive"><strong>STEP</strong><span>${escapeHtml(step)}</span></div>`).join("")}`;
+    }
+
+    function showTrace(steps, heading) {
+      trace.innerHTML = `<div class="trace-title"><span>${heading}</span><span>${steps.length} steps</span></div>${steps.map((step, index) => `<div class="trace-step"><span class="trace-num">0${index + 1}</span><code>${escapeHtml(step)}</code></div>`).join("")}`;
+      trace.classList.add("visible");
+    }
+
+    runButton.addEventListener("click", async () => {
+      runButton.disabled = true;
+      runLabel.textContent = "Working…";
+      trace.classList.remove("visible");
+      try {
+        let response;
+        const operation = operationSelect.value;
+        let data;
+        if (mode === "api" && operation === "browse") {
+          const query = document.querySelector("#query").value.trim();
+          const category = document.querySelector("#category").value;
+          const params = new URLSearchParams();
+          if (query) params.set("query", query);
+          if (category) params.set("category", category);
+          const path = "/api/books" + (params.size ? "?" + params : "");
+          response = await fetch(path);
+          data = await response.json();
+          if (!response.ok) throw new Error(data.detail || "REST request failed.");
+          showBooks(data);
+          showTrace(["Browser → FastAPI: GET " + path, "FastAPI → browse_books()", "FastAPI → browser: catalog JSON"], "REST endpoint: GET /api/books");
+        } else if (mode === "api") {
+          const bookId = document.querySelector("#bookId").value;
+          const quantity = Number(document.querySelector("#quantity").value);
+          response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ book_id: bookId, quantity }) });
+          data = await response.json();
+          if (!response.ok) throw new Error(data.detail || "Order request failed.");
+          showOrder(data);
+          showTrace(["Browser → FastAPI: POST /api/orders", "FastAPI → create_order()", "FastAPI → browser: checkout confirmation"], "REST endpoint: POST /api/orders");
+        } else if (operation === "search") {
+          const query = document.querySelector("#query").value.trim();
+          const category = document.querySelector("#category").value;
+          if (!query) throw new Error("Enter a title, topic, or description to search for.");
+          response = await fetch("/api/demo/mcp/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, category }) });
+          data = await response.json();
+          if (!response.ok) throw new Error(data.detail || "MCP search failed.");
+          showBooks(data.result);
+          showTrace(["Demo host → MCP server: initialize", "Host → server: tools/list", "Host → server: tools/call (search_books)", "Server → host: matching books"], "MCP tool: search_books");
+        } else {
+          const goal = document.querySelector("#goal").value.trim();
+          if (!goal) throw new Error("Describe what you want to learn.");
+          response = await fetch("/api/demo/mcp/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal }) });
+          data = await response.json();
+          if (!response.ok) throw new Error(data.detail || "MCP reading plan failed.");
+          showPlan(data.result);
+          showTrace(["Demo host → MCP server: initialize", "Host → server: tools/list", "Host → server: tools/call (build_reading_plan)", "Server → host: ordered reading plan"], "MCP tool: build_reading_plan");
+        }
+      } catch (error) {
+        outputBody.innerHTML = `<div class="empty-state"><p>${escapeHtml(error.message)}</p></div>`;
+      } finally {
+        runButton.disabled = false;
+        renderFields();
+      }
+    });
+
+    document.querySelector("#catalogButton").addEventListener("click", async () => {
+      inspectResult.classList.add("visible");
+      inspectResult.textContent = "Connecting to MCP server…";
+      try {
+        const response = await fetch("/api/demo/mcp/catalog");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not inspect MCP server.");
+        inspectResult.textContent = JSON.stringify({ tools: data.tools, resources: data.resources, catalog: data.resource_data, prompts: data.prompts }, null, 2);
+      } catch (error) { inspectResult.textContent = error.message; }
+    });
+
+    document.querySelector("#promptButton").addEventListener("click", async () => {
+      inspectResult.classList.add("visible");
+      inspectResult.textContent = "Rendering MCP prompt…";
+      try {
+        const response = await fetch("/api/demo/mcp/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ goal: document.querySelector("#goal")?.value || "Learn API design" }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not render MCP prompt.");
+        inspectResult.textContent = JSON.stringify(data, null, 2);
+      } catch (error) { inspectResult.textContent = error.message; }
+    });
+
+    fetch("/api/demo/mcp/catalog").then((response) => {
+      if (!response.ok) throw new Error("offline");
+      document.querySelector("#stateDot").classList.add("online");
+      document.querySelector("#serverState").textContent = "MCP server connected";
+    }).catch(() => {
+      document.querySelector("#serverState").textContent = "MCP server offline";
+    });
+  </script>
+</body>
+</html>
